@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from "uuid";
 
 import ChatInput from "./components/ChatInput";
 import ChatWindow from "./components/ChatWindow";
+import { sendChatMessage } from "./services/api";
 
 const SESSION_STORAGE_KEY = "rag_assistant_session_id";
-const CHAT_ENDPOINT = "/api/chat";
 const WELCOME_MESSAGE =
   "Ask me anything about machine learning, deep learning, NLP, or model training.";
 
@@ -60,27 +60,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(CHAT_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId,
-          message,
-        }),
-      });
-
-      let payload = {};
-      try {
-        payload = await response.json();
-      } catch {
-        payload = {};
-      }
-
-      if (!response.ok) {
-        throw new Error(payload.error || "Failed to send message.");
-      }
+      const payload = await sendChatMessage({ sessionId, message });
 
       const assistantReply =
         typeof payload.reply === "string" && payload.reply.trim()
