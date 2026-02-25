@@ -18,15 +18,22 @@ The system retrieves relevant knowledge chunks before calling the LLM, so answer
 ## 3. Architecture Diagram
 ```mermaid
 flowchart LR
-    U[User] --> F[Frontend]
-    F --> B[Backend]
-    B --> E[Embeddings]
-    B --> V[Vector Store]
-    B --> L[LLM]
 
-    style U fill:#f9f,stroke:#333
-    style F fill:#bbf,stroke:#333
-    style B fill:#bfb,stroke:#333
+    U[User] --> F[Frontend UI]
+    F --> B[Backend FastAPI]
+
+    B --> QE[Query Embedding]
+    QE --> SS[Similarity Search]
+    SS --> VS[Vector Store]
+
+    VS --> SS
+    SS --> RC[Top Relevant Chunks]
+
+    RC --> PB[Prompt Builder]
+    PB --> LLM[Gemini LLM]
+
+    LLM --> B
+    B --> F
 ```
 
 ## 4. RAG Workflow Explanation
