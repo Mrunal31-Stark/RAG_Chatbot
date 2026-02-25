@@ -18,14 +18,15 @@ The system retrieves relevant knowledge chunks before calling the LLM, so answer
 ## 3. Architecture Diagram
 ```mermaid
 flowchart LR
-    User[User] --> Frontend[Frontend (React + Vite)]
-    Frontend --> Backend[Backend (FastAPI)]
-    Backend --> Embedding_Model[Gemini Embeddings API]
-    Backend --> Vector_Store[Vector Store + In-Memory Session Memory]
-    Vector_Store --> Backend
-    Backend --> Gemini_LLM[Gemini LLM API]
-    Gemini_LLM --> Backend
-    Backend --> Frontend
+    U[User] --> F[Frontend]
+    F --> B[Backend]
+    B --> E[Embeddings]
+    B --> V[Vector Store]
+    B --> L[LLM]
+
+    style U fill:#f9f,stroke:#333
+    style F fill:#bbf,stroke:#333
+    style B fill:#bfb,stroke:#333
 ```
 
 ## 4. RAG Workflow Explanation
