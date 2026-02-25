@@ -105,7 +105,7 @@ USER QUESTION:
 
 ANSWER:
 ```
-# Doc Creations you can also create the docs like I Created liek this 
+# Doc Creations you can also create the docs like I Created like this 
 ```bash
 {
     "id": "doc_001",
