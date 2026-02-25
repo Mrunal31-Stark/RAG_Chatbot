@@ -1,4 +1,4 @@
-# Production-Grade RAG GenAI Chat Assistant
+#  RAG GenAI Chat Assistant
 
 ## 1. Project Overview
 This project is a production-ready Retrieval-Augmented Generation (RAG) chat assistant for AI learning topics such as Machine Learning (ML), Deep Learning (DL), and NLP.
