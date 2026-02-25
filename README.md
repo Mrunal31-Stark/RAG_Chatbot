@@ -105,7 +105,14 @@ USER QUESTION:
 
 ANSWER:
 ```
-
+# Doc Creations you can also create the docs like I Created liek this 
+```bash
+{
+    "id": "doc_001",
+    "title": "Machine Learning Basics",
+    "content": "Machine learning is a branch of AI where systems learn patterns from data instead of fixed rules.\nSupervised learning uses labeled examples to map inputs to known outputs.\nUnsupervised learning finds structure in unlabeled data, such as clusters or latent factors.\nFeatures are measurable input variables, and labels are the target values to predict.\nData quality, preprocessing, and representative sampling strongly influence model performance."
+  }
+```
 ## 8. Setup Instructions
 ### Backend
 ```bash
@@ -124,6 +131,11 @@ APP_PORT=8000
 ```
 
 Run backend:
+# first :
+```bash
+python backend/scripts/ingest.py
+```
+# run this to Ingest documents, chunk content, generate embeddings, and build a vector store
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
