@@ -1,0 +1,42 @@
+[
+  {
+    "id": "doc_001",
+    "title": "Machine Learning Basics",
+    "content": "Machine learning is a branch of AI where systems learn patterns from data instead of fixed rules.\nSupervised learning uses labeled examples to map inputs to known outputs.\nUnsupervised learning finds structure in unlabeled data, such as clusters or latent factors.\nFeatures are measurable input variables, and labels are the target values to predict.\nData quality, preprocessing, and representative sampling strongly influence model performance."
+  },
+  {
+    "id": "doc_002",
+    "title": "Deep Learning",
+    "content": "Deep learning uses neural networks with many layers to learn complex representations.\nEarlier layers often detect simple patterns, while deeper layers capture abstract concepts.\nIt typically requires large datasets and high compute resources such as GPUs or TPUs.\nCommon architectures include CNNs, RNNs, and Transformers for different problem types.\nDeep learning drives advances in speech recognition, language modeling, and image analysis."
+  },
+  {
+    "id": "doc_003",
+    "title": "Overfitting",
+    "content": "Overfitting occurs when a model learns noise from training data instead of general patterns.\nA common sign is very high training accuracy but much lower validation accuracy.\nIt is often caused by high model complexity, limited data, or data leakage.\nRegularization, dropout, early stopping, and cross-validation help reduce overfitting.\nAdding diverse training data and simplifying the model can improve generalization."
+  },
+  {
+    "id": "doc_004",
+    "title": "Natural Language Processing (NLP)",
+    "content": "NLP enables computers to understand, analyze, and generate human language.\nCore tasks include tokenization, text classification, named entity recognition, and translation.\nTransformer models use attention mechanisms to capture context across long text sequences.\nEmbeddings convert text into vectors so semantic similarity can be measured mathematically.\nIn RAG systems, retrieval supplies grounded context to reduce hallucinations in generated answers."
+  },
+  {
+    "id": "doc_005",
+    "title": "Computer Vision",
+    "content": "Computer vision focuses on extracting information from images and videos.\nTypical tasks include image classification, object detection, and semantic segmentation.\nModels such as CNNs and Vision Transformers learn spatial features from pixel data.\nPreprocessing often includes resizing, normalization, and augmentation for robustness.\nPerformance depends on high-quality annotations and coverage of real-world variability."
+  },
+  {
+    "id": "doc_006",
+    "title": "Model Evaluation",
+    "content": "Model evaluation measures how well a trained model performs on unseen data.\nFor classification, common metrics are precision, recall, F1-score, and ROC-AUC.\nFor regression, MAE, MSE, RMSE, and R-squared are widely used.\nA confusion matrix highlights which classes are being confused and where errors concentrate.\nReliable evaluation uses validation splits or cross-validation aligned with business objectives."
+  },
+  {
+    "id": "doc_007",
+    "title": "Training vs Inference",
+    "content": "Training is the phase where model parameters are updated by minimizing a loss function.\nInference is the phase where a fixed model produces predictions for new inputs.\nTraining is usually compute-intensive and batch-oriented, often done offline.\nInference prioritizes low latency, high throughput, and operational reliability.\nConsistent preprocessing between training and inference is essential to avoid performance drift."
+  },
+  {
+    "id": "doc_008",
+    "title": "Neural Networks",
+    "content": "A neural network is composed of layers of neurons connected by weighted links.\nEach neuron applies a weighted sum and nonlinear activation to transform inputs.\nBackpropagation computes gradients, and optimizers like Adam update model weights.\nDepth, width, normalization, and learning rate choices affect accuracy and stability.\nModern architectures use techniques like residual connections to train deeper networks effectively."
+  }
+]
