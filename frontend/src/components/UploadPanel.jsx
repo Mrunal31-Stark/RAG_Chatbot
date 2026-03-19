@@ -8,6 +8,7 @@ function UploadPanel({ currentUser, isLoading, onUpload }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
 
     if (!file) {
       setError("Choose a PDF or text file first.");
@@ -21,7 +22,7 @@ function UploadPanel({ currentUser, isLoading, onUpload }) {
       const payload = await onUpload(file);
       setStatus(payload.message || "Document uploaded successfully.");
       setFile(null);
-      event.currentTarget.reset();
+      form.reset();
     } catch (requestError) {
       setStatus("");
       setError(requestError instanceof Error ? requestError.message : "Upload failed.");

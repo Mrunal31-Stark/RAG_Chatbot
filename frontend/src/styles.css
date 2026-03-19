@@ -367,6 +367,15 @@ body {
   background: rgba(252, 254, 255, 0.94);
 }
 
+.crash-card {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.crash-content {
+  padding: 1.25rem;
+}
+
 .chat-input-row button {
   background: var(--accent);
   color: #fff;

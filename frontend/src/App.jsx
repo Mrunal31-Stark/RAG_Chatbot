@@ -36,14 +36,18 @@ function getStoredSessionId() {
     return uuidv4();
   }
 
-  const existingSessionId = window.localStorage.getItem(SESSION_STORAGE_KEY);
-  if (existingSessionId) {
-    return existingSessionId;
-  }
+  try {
+    const existingSessionId = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (existingSessionId) {
+      return existingSessionId;
+    }
 
-  const generatedSessionId = uuidv4();
-  window.localStorage.setItem(SESSION_STORAGE_KEY, generatedSessionId);
-  return generatedSessionId;
+    const generatedSessionId = uuidv4();
+    window.localStorage.setItem(SESSION_STORAGE_KEY, generatedSessionId);
+    return generatedSessionId;
+  } catch {
+    return uuidv4();
+  }
 }
 
 
@@ -52,7 +56,11 @@ function getStoredUsername() {
     return "";
   }
 
-  return window.localStorage.getItem(USERNAME_STORAGE_KEY) || "";
+  try {
+    return window.localStorage.getItem(USERNAME_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
 }
 
 
@@ -72,11 +80,15 @@ function App() {
       return;
     }
 
-    window.localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
-    if (username) {
-      window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
-    } else {
-      window.localStorage.removeItem(USERNAME_STORAGE_KEY);
+    try {
+      window.localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
+      if (username) {
+        window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
+      } else {
+        window.localStorage.removeItem(USERNAME_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage failures so the app still renders in restricted browsers.
     }
   };
 

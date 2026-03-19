@@ -15,6 +15,9 @@ from utils.embeddings import get_embedding
 from utils.runtime_store import (
     auth_sessions,
     auth_sessions_lock,
+    get_user_documents_for_session,
+    resolve_document_owner,
+    save_user_documents,
     user_documents,
     user_documents_lock,
 )
@@ -67,7 +70,7 @@ async def upload_document(
     file: UploadFile = File(...),
     sessionId: str = Form(...),
 ) -> UploadResponse:
-    """Upload, chunk, embed, and store a user document in memory."""
+    """Upload, chunk, embed, and store a user document."""
     session_id = sessionId.strip()
     if not session_id:
         raise HTTPException(status_code=400, detail="sessionId is required.")
@@ -106,9 +109,19 @@ async def upload_document(
             detail="embedding generation failed for uploaded document.",
         )
 
+    owner_key = resolve_document_owner(session_id)
     with user_documents_lock:
-        bucket = user_documents.setdefault(session_id, [])
+        bucket = user_documents.setdefault(owner_key, [])
         bucket.extend(chunk_records)
+    save_user_documents()
+
+    logger.info(
+        "Indexed %s chunks for owner '%s' (session '%s'). Total user chunks: %s",
+        len(chunk_records),
+        owner_key,
+        session_id,
+        len(get_user_documents_for_session(session_id)),
+    )
 
     return UploadResponse(
         message="Document uploaded and indexed successfully.",

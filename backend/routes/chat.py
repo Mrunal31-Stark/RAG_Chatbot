@@ -21,10 +21,10 @@ except ImportError:  # pragma: no cover - depends on installed packages
 
 from utils.embeddings import get_query_embedding
 from utils.runtime_store import (
+    get_user_documents_for_session,
+    resolve_document_owner,
     session_memory,
     session_memory_lock,
-    user_documents,
-    user_documents_lock,
 )
 from utils.similarity import retrieve_top_k
 
@@ -167,8 +167,7 @@ def _load_vector_store(path: Path = VECTOR_STORE_PATH) -> list[dict[str, Any]]:
 def _get_documents_for_session(session_id: str) -> list[dict[str, Any]]:
     """Merge global documents with user-specific uploaded chunks."""
     global_documents = _load_vector_store()
-    with user_documents_lock:
-        scoped_documents = list(user_documents.get(session_id, []))
+    scoped_documents = get_user_documents_for_session(session_id)
     return global_documents + scoped_documents
 
 
@@ -306,3 +305,29 @@ def chat(request: ChatRequest) -> ChatResponse:
 
     add_message(session_id, "assistant", reply)
     return ChatResponse(reply=reply, retrievedChunks=len(retrieved))
+
+
+@router.get("/api/debug/session/{session_id}")
+def debug_session(session_id: str) -> dict[str, Any]:
+    """Inspect what the backend has indexed for a given session."""
+    cleaned_session_id = session_id.strip()
+    if not cleaned_session_id:
+        raise HTTPException(status_code=400, detail="sessionId is required.")
+
+    try:
+        global_documents = _load_vector_store()
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        logger.error("Unable to load vector store for debug: %s", exc)
+        raise HTTPException(status_code=500, detail="Vector store is unavailable.") from exc
+
+    scoped_documents = get_user_documents_for_session(cleaned_session_id)
+    owner_key = resolve_document_owner(cleaned_session_id)
+
+    return {
+        "sessionId": cleaned_session_id,
+        "documentOwner": owner_key,
+        "globalChunks": len(global_documents),
+        "userChunks": len(scoped_documents),
+        "totalChunks": len(global_documents) + len(scoped_documents),
+        "sampleUserChunk": scoped_documents[0]["content"][:200] if scoped_documents else "",
+    }
