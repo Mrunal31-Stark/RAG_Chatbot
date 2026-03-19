@@ -4,8 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 
+from routes.auth import router as auth_router
 from routes.chat import router as chat_router
 from routes.health import router as health_router
+from routes.upload import router as upload_router
 from utils.config import settings
 from utils.logging import configure_logging
 
@@ -28,7 +30,9 @@ app.add_middleware(
 )
 
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(chat_router)
+app.include_router(upload_router)
 
 
 @app.get("/")
@@ -50,6 +54,16 @@ async def validation_exception_handler(
     """Return validation errors in a consistent JSON shape."""
     for error in exc.errors():
         location = error.get("loc", [])
+        if "username" in location:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "username is required."},
+            )
+        if "password" in location:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "password is required."},
+            )
         if "sessionId" in location:
             return JSONResponse(
                 status_code=400,
@@ -60,6 +74,11 @@ async def validation_exception_handler(
                 status_code=400,
                 content={"error": "message is required."},
             )
+        if "file" in location:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "file is required."},
+            )
 
     return JSONResponse(
         status_code=422,
@@ -68,4 +87,4 @@ async def validation_exception_handler(
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=settings.app_host, port=10000, reload=False)
+    uvicorn.run("main:app", host=settings.app_host, port=settings.app_port, reload=False)

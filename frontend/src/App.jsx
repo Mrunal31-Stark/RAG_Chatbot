@@ -1,13 +1,23 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
+import AuthPanel from "./components/AuthPanel";
 import ChatInput from "./components/ChatInput";
 import ChatWindow from "./components/ChatWindow";
-import { sendChatMessage } from "./services/api";
+import UploadPanel from "./components/UploadPanel";
+import {
+  loginUser,
+  registerUser,
+  sendChatMessage,
+  uploadDocument,
+} from "./services/api";
+
 
 const SESSION_STORAGE_KEY = "rag_assistant_session_id";
+const USERNAME_STORAGE_KEY = "rag_assistant_username";
 const WELCOME_MESSAGE =
   "Ask me anything about machine learning, deep learning, NLP, or model training.";
+
 
 function createMessage(role, content, options = {}) {
   return {
@@ -20,7 +30,8 @@ function createMessage(role, content, options = {}) {
   };
 }
 
-function getOrCreateSessionId() {
+
+function getStoredSessionId() {
   if (typeof window === "undefined") {
     return uuidv4();
   }
@@ -35,18 +46,87 @@ function getOrCreateSessionId() {
   return generatedSessionId;
 }
 
-function App() {
-  const [sessionId, setSessionId] = useState(() => getOrCreateSessionId());
-  const [messages, setMessages] = useState([
-    createMessage("assistant", WELCOME_MESSAGE),
-  ]);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const shortSessionId = useMemo(() => sessionId.slice(0, 8), [sessionId]);
+function getStoredUsername() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem(USERNAME_STORAGE_KEY) || "";
+}
+
+
+function App() {
+  const [sessionId, setSessionId] = useState(() => getStoredSessionId());
+  const [currentUser, setCurrentUser] = useState(() => getStoredUsername());
+  const [messages, setMessages] = useState([createMessage("assistant", WELCOME_MESSAGE)]);
+  const [error, setError] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isUploadLoading, setIsUploadLoading] = useState(false);
+
+  const isBusy = isChatLoading || isAuthLoading || isUploadLoading;
+
+  const persistSession = (nextSessionId, username = "") => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
+    if (username) {
+      window.localStorage.setItem(USERNAME_STORAGE_KEY, username);
+    } else {
+      window.localStorage.removeItem(USERNAME_STORAGE_KEY);
+    }
+  };
+
+  const resetConversation = (message = WELCOME_MESSAGE) => {
+    setMessages([createMessage("assistant", message)]);
+    setError("");
+  };
+
+  const handleAuthSuccess = (payload, actionLabel) => {
+    const nextSessionId = payload.sessionId;
+    const username = payload.username || "";
+
+    setSessionId(nextSessionId);
+    setCurrentUser(username);
+    persistSession(nextSessionId, username);
+    resetConversation(
+      `${actionLabel} successful. Your private uploads will now be included in retrieval.`
+    );
+  };
+
+  const handleLogin = async ({ username, password }) => {
+    setIsAuthLoading(true);
+    try {
+      const payload = await loginUser({ username, password });
+      handleAuthSuccess(payload, "Login");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleRegister = async ({ username, password }) => {
+    setIsAuthLoading(true);
+    try {
+      const payload = await registerUser({ username, password });
+      handleAuthSuccess(payload, "Registration");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    const guestSessionId = uuidv4();
+    setCurrentUser("");
+    setSessionId(guestSessionId);
+    persistSession(guestSessionId, "");
+    resetConversation("Logged out. You can continue chatting as a guest.");
+  };
 
   const handleSend = async (userInput) => {
-    if (isLoading) {
+    if (isChatLoading) {
       return;
     }
 
@@ -57,16 +137,14 @@ function App() {
 
     setError("");
     setMessages((previous) => [...previous, createMessage("user", message)]);
-    setIsLoading(true);
+    setIsChatLoading(true);
 
     try {
       const payload = await sendChatMessage({ sessionId, message });
-
       const assistantReply =
         typeof payload.reply === "string" && payload.reply.trim()
           ? payload.reply.trim()
           : "I don't know";
-
       const retrievedChunks =
         typeof payload.retrievedChunks === "number" ? payload.retrievedChunks : null;
 
@@ -75,55 +153,84 @@ function App() {
         createMessage("assistant", assistantReply, { retrievedChunks }),
       ]);
     } catch (requestError) {
-      const messageText =
+      setError(
         requestError instanceof Error
           ? requestError.message
-          : "Request failed. Please try again.";
-      setError(messageText);
+          : "Request failed. Please try again."
+      );
     } finally {
-      setIsLoading(false);
+      setIsChatLoading(false);
+    }
+  };
+
+  const handleUpload = async (file) => {
+    setIsUploadLoading(true);
+    try {
+      return await uploadDocument({ sessionId, file });
+    } finally {
+      setIsUploadLoading(false);
     }
   };
 
   const handleNewChat = () => {
-    const newSessionId = uuidv4();
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
+    if (!currentUser) {
+      const guestSessionId = uuidv4();
+      setSessionId(guestSessionId);
+      persistSession(guestSessionId, "");
     }
-
-    setSessionId(newSessionId);
-    setError("");
-    setIsLoading(false);
-    setMessages([createMessage("assistant", WELCOME_MESSAGE)]);
+    resetConversation(WELCOME_MESSAGE);
   };
 
   return (
     <main className="app-shell">
-      <section className="chat-card">
-        <header className="chat-header">
-          <div>
-            <h1>AI Learning Assistant</h1>
-            <p>RAG chat interface</p>
-          </div>
+      <section className="workspace-grid">
+        <aside className="sidebar">
+          <AuthPanel
+            currentUser={currentUser}
+            isLoading={isAuthLoading}
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+            onLogout={handleLogout}
+          />
+          <UploadPanel
+            currentUser={currentUser}
+            isLoading={isUploadLoading}
+            onUpload={handleUpload}
+          />
+        </aside>
 
-          <div className="chat-header-actions">
-            <span className="session-pill" title={sessionId}>
-              Session: {shortSessionId}
-            </span>
-            <button type="button" className="new-chat-button" onClick={handleNewChat}>
-              New Chat
-            </button>
-          </div>
-        </header>
+        <section className="chat-card">
+          <header className="chat-header">
+            <div>
+              <h1>AI Learning Assistant</h1>
+              <p>Global RAG + private user document retrieval</p>
+            </div>
 
-        <ChatWindow messages={messages} isLoading={isLoading} />
+            <div className="chat-header-actions">
+              <span className="session-pill" title={sessionId}>
+                {currentUser ? `User: ${currentUser}` : "Guest Session"}
+              </span>
+              <button
+                type="button"
+                className="new-chat-button"
+                onClick={handleNewChat}
+                disabled={isBusy}
+              >
+                New Chat
+              </button>
+            </div>
+          </header>
 
-        {error && <p className="error-banner">{error}</p>}
+          <ChatWindow messages={messages} isLoading={isChatLoading} />
 
-        <ChatInput onSend={handleSend} disabled={isLoading} />
+          {error && <p className="error-banner">{error}</p>}
+
+          <ChatInput onSend={handleSend} disabled={isBusy} />
+        </section>
       </section>
     </main>
   );
 }
+
 
 export default App;

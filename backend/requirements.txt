@@ -3,3 +3,6 @@ uvicorn
 numpy
 python-dotenv
 google-genai
+bcrypt
+pypdf
+python-multipart

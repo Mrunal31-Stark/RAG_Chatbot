@@ -6,7 +6,6 @@ import json
 import logging
 import os
 from pathlib import Path
-from threading import Lock
 from typing import Any
 
 from dotenv import load_dotenv
@@ -21,6 +20,12 @@ except ImportError:  # pragma: no cover - depends on installed packages
     genai_errors = None  # type: ignore[assignment]
 
 from utils.embeddings import get_query_embedding
+from utils.runtime_store import (
+    session_memory,
+    session_memory_lock,
+    user_documents,
+    user_documents_lock,
+)
 from utils.similarity import retrieve_top_k
 
 
@@ -39,9 +44,6 @@ MAX_SESSION_MESSAGES = 5
 NO_CONTEXT_FALLBACK = (
     "I don't know"
 )
-
-session_memory: dict[str, list[dict[str, str]]] = {}
-session_memory_lock = Lock()
 
 _client: Any | None = None
 _client_api_key: str | None = None
@@ -162,6 +164,14 @@ def _load_vector_store(path: Path = VECTOR_STORE_PATH) -> list[dict[str, Any]]:
     return data
 
 
+def _get_documents_for_session(session_id: str) -> list[dict[str, Any]]:
+    """Merge global documents with user-specific uploaded chunks."""
+    global_documents = _load_vector_store()
+    with user_documents_lock:
+        scoped_documents = list(user_documents.get(session_id, []))
+    return global_documents + scoped_documents
+
+
 def _build_prompt(
     question: str,
     retrieved_chunks: list[dict[str, Any]],
@@ -267,7 +277,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         )
 
     try:
-        documents = _load_vector_store()
+        documents = _get_documents_for_session(session_id)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         logger.error("Unable to load vector store: %s", exc)
         raise HTTPException(status_code=500, detail="Vector store is unavailable.") from exc
